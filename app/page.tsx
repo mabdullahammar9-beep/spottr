@@ -1,12 +1,61 @@
 "use client";
+import {
+  collection,
+  addDoc,
+} from "firebase/firestore";
+
+import { db } from "../lib/firebase";
 
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { signInWithPopup, onAuthStateChanged } from "firebase/auth";
 import { auth, provider } from "../lib/firebase";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default function Home() {
     const [user, setUser] = useState<any>(null);
+    const [name, setName] = useState("");
+const [goal, setGoal] = useState("");
+const [timing, setTiming] = useState("");
+const [level, setLevel] = useState("");
+    const testGemini = async () => {
+      const saveProfile = async () => {
+
+  try {
+
+    await addDoc(collection(db, "users"), {
+      name,
+      goal,
+      timing,
+      level,
+      createdAt: new Date(),
+    });
+
+    alert("Profile Saved 🚀");
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert("Something went wrong");
+
+  }
+};
+
+  const genAI = new GoogleGenerativeAI(
+    process.env.NEXT_PUBLIC_GEMINI_API_KEY!
+  );
+
+  const model = genAI.getGenerativeModel({
+   model: "gemini-2.0-flash",
+  });
+
+  const result = await model.generateContent(
+    "Give one short motivational fitness quote."
+  );
+
+  alert(result.response.text());
+};
     useEffect(() => {
   const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
     setUser(currentUser);
@@ -27,6 +76,28 @@ window.location.href = "/";
   console.error(error);
 }
   };
+  const saveProfile = async () => {
+
+  try {
+
+    await addDoc(collection(db, "users"), {
+      name,
+      goal,
+      timing,
+      level,
+      createdAt: new Date(),
+    });
+
+    alert("Profile Saved 🚀");
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert("Something went wrong");
+
+  }
+};
   return (
     <main className="min-h-screen bg-black text-white">
 
@@ -75,6 +146,14 @@ window.location.href = "/";
 
   </div>
 </nav>
+<div className="px-8 py-6">
+  <button
+    onClick={testGemini}
+    className="bg-lime-400 text-black px-6 py-3 rounded-2xl font-bold hover:scale-105 transition"
+  >
+    Test Gemini AI
+  </button>
+</div>
 
       {/* Hero Section */}
       <section className="relative flex flex-col items-center justify-center text-center px-6 py-32 overflow-hidden">
@@ -557,6 +636,78 @@ window.location.href = "/";
         </div>
 
       </section>
+
+      {/* Onboarding Section */}
+
+<section className="px-8 py-24 border-t border-gray-900">
+
+  <div className="max-w-3xl mx-auto bg-gray-900 border border-gray-800 rounded-3xl p-10">
+
+    <h2 className="text-4xl font-bold mb-4">
+      Complete Your Fitness Profile
+    </h2>
+
+    <p className="text-gray-400 mb-10">
+      Help Spottr find your perfect gym partner.
+    </p>
+
+    <div className="space-y-6">
+
+      <input
+        type="text"
+        placeholder="Your Name"
+        value={name}
+onChange={(e) => setName(e.target.value)}
+        className="w-full bg-black border border-gray-800 rounded-2xl px-5 py-4 outline-none focus:border-lime-400 transition"
+      />
+
+      <select
+  value={goal}
+  onChange={(e) => setGoal(e.target.value)}
+  className="w-full bg-black border border-gray-800 rounded-..."
+>
+        <option>Fitness Goal</option>
+        <option>Weight Loss</option>
+        <option>Muscle Gain</option>
+        <option>Strength Training</option>
+        <option>General Fitness</option>
+      </select>
+
+      <select
+  value={timing}
+  onChange={(e) => setTiming(e.target.value)}
+  className="..."
+>
+        <option>Workout Timing</option>
+        <option>Morning</option>
+        <option>Afternoon</option>
+        <option>Evening</option>
+        <option>Late Night</option>
+      </select>
+
+     <select
+  value={level}
+  onChange={(e) => setLevel(e.target.value)}
+  className="..."
+>
+        <option>Experience Level</option>
+        <option>Beginner</option>
+        <option>Intermediate</option>
+        <option>Advanced</option>
+      </select>
+
+      <button
+  onClick={saveProfile}
+  className="..."
+>
+  Save Profile
+</button>
+
+    </div>
+
+  </div>
+
+</section>
 
     </main>
   );

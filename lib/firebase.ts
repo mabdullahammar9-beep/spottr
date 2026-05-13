@@ -5,6 +5,8 @@ import {
   GoogleAuthProvider,
 } from "firebase/auth";
 
+import { getFirestore } from "firebase/firestore";
+
 const firebaseConfig = {
   apiKey: "AIzaSyBV74hBwK-EZFiaUbHpdf8MQaEQwnVlBrU",
   authDomain: "spottr-f650a.firebaseapp.com",
@@ -17,5 +19,5 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-
 export const provider = new GoogleAuthProvider();
+export const db = getFirestore(app);
