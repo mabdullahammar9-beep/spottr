@@ -2,105 +2,153 @@
 import {
   collection,
   addDoc,
+  getDocs,
 } from "firebase/firestore";
 
 import { db } from "../lib/firebase";
-
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { signInWithPopup, onAuthStateChanged } from "firebase/auth";
 import { auth, provider } from "../lib/firebase";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
+const genAI = new GoogleGenerativeAI(apiKey);
+
 export default function Home() {
-    const [user, setUser] = useState<any>(null);
-    const [name, setName] = useState("");
-const [goal, setGoal] = useState("");
-const [timing, setTiming] = useState("");
-const [level, setLevel] = useState("");
-    const testGemini = async () => {
-      const saveProfile = async () => {
 
-  try {
+  console.log("HOME COMPONENT RUNNING");
 
-    await addDoc(collection(db, "users"), {
-      name,
-      goal,
-      timing,
-      level,
-      createdAt: new Date(),
-    });
+  const [user, setUser] = useState<any>(null);
 
-    alert("Profile Saved 🚀");
+  const [name, setName] = useState("");
+  const [goal, setGoal] = useState("");
+  const [timing, setTiming] = useState("");
+  const [level, setLevel] = useState("");
 
-  } catch (error) {
+  const [users, setUsers] = useState<any[]>([]);
 
-    console.error(error);
+  useEffect(() => {
 
-    alert("Something went wrong");
+  fetchUsers();
 
-  }
-};
-
-  const genAI = new GoogleGenerativeAI(
-    process.env.NEXT_PUBLIC_GEMINI_API_KEY!
+  const unsubscribe = onAuthStateChanged(
+    auth,
+    (currentUser) => {
+      setUser(currentUser);
+    }
   );
-
-  const model = genAI.getGenerativeModel({
-   model: "gemini-2.0-flash",
-  });
-
-  const result = await model.generateContent(
-    "Give one short motivational fitness quote."
-  );
-
-  alert(result.response.text());
-};
-    useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-    setUser(currentUser);
-  });
 
   return () => unsubscribe();
+
 }, []);
-    
-    const handleGoogleLogin = async () => {
+
+  const handleGoogleLogin = async () => {
+
     try {
-  const result = await signInWithPopup(auth, provider);
 
-  setUser(result.user);
+      const result = await signInWithPopup(
+        auth,
+        provider
+      );
 
-window.location.href = "/";
+      setUser(result.user);
 
-} catch (error) {
-  console.error(error);
-}
+      window.location.href = "/";
+
+    } catch (error) {
+
+      console.error(error);
+
+    }
   };
+
   const saveProfile = async () => {
 
-  try {
+    try {
 
-    await addDoc(collection(db, "users"), {
-      name,
-      goal,
-      timing,
-      level,
-      createdAt: new Date(),
-    });
+      await addDoc(collection(db, "users"), {
+        name,
+        goal,
+        timing,
+        level,
+        createdAt: new Date(),
+      });
 
-    alert("Profile Saved 🚀");
+      alert("Profile Saved 🚀");
 
-  } catch (error) {
+      fetchUsers();
 
-    console.error(error);
+    } catch (error) {
 
-    alert("Something went wrong");
+      console.error(error);
 
-  }
-};
+      alert("Something went wrong");
+
+    }
+  };
+
+  const fetchUsers = async () => {
+    console.log("FETCH USERS RUNNING");
+
+    try {
+
+      const querySnapshot = await getDocs(
+        collection(db, "users")
+      );
+
+      const usersData: any[] = [];
+
+      querySnapshot.forEach((doc) => {
+
+        usersData.push({
+          id: doc.id,
+          ...doc.data(),
+        });
+
+      });
+
+      setUsers(usersData);
+      
+
+    } catch (error) {
+
+      console.error(error);
+
+    }
+  };
+
+  const runGemini = async () => {
+
+    try {
+
+      const model = genAI.getGenerativeModel({
+        model: "gemini-1.5-flash",
+      });
+
+      const result = await model.generateContent(
+        `Suggest a gym partner for:
+        Name: ${name}
+        Goal: ${goal}
+        Timing: ${timing}
+        Level: ${level}`
+      );
+
+      const response = result.response.text();
+
+      alert(response);
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert("Gemini quota exceeded");
+
+    }
+  };
+
   return (
     <main className="min-h-screen bg-black text-white">
-
   {/* Navbar */}
 <nav className="flex items-center justify-between px-8 py-6 border-b border-gray-800">
 
@@ -148,7 +196,7 @@ window.location.href = "/";
 </nav>
 <div className="px-8 py-6">
   <button
-    onClick={testGemini}
+    onClick={runGemini}
     className="bg-lime-400 text-black px-6 py-3 rounded-2xl font-bold hover:scale-105 transition"
   >
     Test Gemini AI
@@ -702,8 +750,60 @@ onChange={(e) => setName(e.target.value)}
 >
   Save Profile
 </button>
+<button
+  onClick={runGemini}
+  className="w-full bg-lime-400 text-black py-3 rounded-xl font-semibold mt-4"
+>
+  Test Gemini AI 🚀
+</button>
 
     </div>
+
+  </div>
+
+</section>
+{/* Dynamic Community Section */}
+
+<section className="px-8 py-24 border-t border-gray-900">
+
+  <div className="text-center mb-16">
+
+    <h2 className="text-4xl md:text-5xl font-bold">
+      Real Spottr Users 🚀
+    </h2>
+
+    <p className="text-gray-400 mt-4 text-lg">
+      Live users fetched from Firestore.
+    </p>
+
+  </div>
+
+  <div className="grid md:grid-cols-3 gap-8">
+
+    {users.map((userCard) => (
+
+      <div
+        key={userCard.id}
+        className="bg-gray-900 border border-gray-800 rounded-3xl p-6"
+      >
+
+        <h3 className="text-2xl font-bold mb-4">
+          {userCard.name}
+        </h3>
+
+        <div className="space-y-3 text-gray-300">
+
+          <p>🎯 {userCard.goal}</p>
+
+          <p>⏰ {userCard.timing}</p>
+
+          <p>🔥 {userCard.level}</p>
+
+        </div>
+
+      </div>
+
+    ))}
 
   </div>
 
