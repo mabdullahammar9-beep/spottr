@@ -23,23 +23,20 @@ export default function Home() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [viewProfile, setViewProfile] = useState<any>(null);
   const [showOverview, setShowOverview] = useState(false);
-  const [loading, setLoading] = useState(true);
+  
 
 const [message, setMessage] = useState("");
 
 const [messages, setMessages] = useState<string[]>([]);
 const [connections, setConnections] = useState<any[]>([]);
-const activityMessages = [
-  "🔥 Ahmed just joined Spottr",
-  "💪 12 new workout matches today",
-  "🚀 Sarah completed a 20-day streak",
-  "🏋️ 8 new gym partners found nearby",
-];
+
 
   const [name, setName] = useState("");
   const [goal, setGoal] = useState("");
   const [timing, setTiming] = useState("");
   const [level, setLevel] = useState("");
+  const [search, setSearch] = useState("");
+  
 
   const [users, setUsers] = useState<any[]>([]);
 
@@ -169,14 +166,7 @@ const activityMessages = [
 
   <div className="animate-pulse text-center">
 
-    {
-      activityMessages[
-        Math.floor(
-          Math.random() * activityMessages.length
-        )
-      ]
-    }
-
+    🔥 Ahmed just joined Spottr
   </div>
 
 </div>
@@ -553,10 +543,15 @@ const activityMessages = [
         <div className="max-w-4xl mx-auto bg-gray-900 border border-gray-800 rounded-3xl p-6 flex flex-col md:flex-row gap-4">
 
           <input
-            type="text"
-            placeholder="Search by fitness goal, gym timings, or username..."
-            className="flex-1 bg-black border border-gray-800 rounded-2xl px-5 py-4 outline-none focus:border-lime-400 transition"
-          />
+  type="text"
+  placeholder="Search by fitness goal, gym timings, or username..."
+  value={search}
+  onChange={(e) => {
+    console.log("SEARCHING:", e.target.value);
+    setSearch(e.target.value);
+  }}
+  className="flex-1 bg-black border border-gray-800 rounded-2xl px-5 py-4 outline-none focus:border-lime-400 transition"
+/>
 
           <button className="bg-lime-400 text-black px-8 py-4 rounded-2xl font-semibold hover:scale-105 transition">
             Find Partners
@@ -865,13 +860,34 @@ onChange={(e) => setName(e.target.value)}
    {users
   .filter((userCard) => {
 
-    if (!goal) return true;
+    if (!search) return true;
 
-    return userCard.goal === goal;
+    const searchText = search.toLowerCase();
+    console.log(searchText);
+
+    return (
+
+      userCard.name
+        ?.toLowerCase()
+        .includes(searchText)
+
+      ||
+
+      userCard.goal
+        ?.toLowerCase()
+        .includes(searchText)
+
+      ||
+
+      userCard.timing
+        ?.toLowerCase()
+        .includes(searchText)
+
+    );
 
   })
-  .map((userCard) => (
 
+  .map((userCard) => (
       <div
   key={userCard.id}
   onClick={() => setViewProfile(userCard)}
