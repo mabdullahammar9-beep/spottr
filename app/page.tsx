@@ -20,6 +20,21 @@ export default function Home() {
   console.log("HOME COMPONENT RUNNING");
 
   const [user, setUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [viewProfile, setViewProfile] = useState<any>(null);
+  const [showOverview, setShowOverview] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+const [message, setMessage] = useState("");
+
+const [messages, setMessages] = useState<string[]>([]);
+const [connections, setConnections] = useState<any[]>([]);
+const activityMessages = [
+  "🔥 Ahmed just joined Spottr",
+  "💪 12 new workout matches today",
+  "🚀 Sarah completed a 20-day streak",
+  "🏋️ 8 new gym partners found nearby",
+];
 
   const [name, setName] = useState("");
   const [goal, setGoal] = useState("");
@@ -38,6 +53,7 @@ export default function Home() {
       setUser(currentUser);
     }
   );
+  
 
   return () => unsubscribe();
 
@@ -149,8 +165,24 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-black text-white">
+      <div className="bg-lime-400 text-black py-3 overflow-hidden whitespace-nowrap font-semibold">
+
+  <div className="animate-pulse text-center">
+
+    {
+      activityMessages[
+        Math.floor(
+          Math.random() * activityMessages.length
+        )
+      ]
+    }
+
+  </div>
+
+</div>
   {/* Navbar */}
-<nav className="flex items-center justify-between px-8 py-6 border-b border-gray-800">
+
+<nav className="flex flex-col md:flex-row items-center justify-between px-8 py-6 border-b border-gray-800 gap-4">
 
   {/* Logo */}
   <h1 className="text-2xl font-bold tracking-wide">
@@ -158,11 +190,21 @@ export default function Home() {
   </h1>
 
   {/* Right Side */}
-  <div className="flex items-center gap-4">
+  <div className="flex items-center gap-3">
 
-    {user && (
+    <button
+      onClick={() => setShowOverview(true)}
+      className="border border-gray-700 px-5 py-2 rounded-full hover:bg-gray-900 transition"
+    >
+      Overview
+    </button>
+
+    {user ? (
+
       <>
+
         <div className="flex items-center gap-3 bg-gray-900 px-4 py-2 rounded-full border border-gray-800">
+
           <img
             src={user.photoURL}
             alt="Profile"
@@ -172,6 +214,7 @@ export default function Home() {
           <span className="text-sm font-medium">
             {user.displayName}
           </span>
+
         </div>
 
         <button
@@ -180,28 +223,23 @@ export default function Home() {
         >
           Logout
         </button>
-      </>
-    )}
 
-    {!user && (
+      </>
+
+    ) : (
+
       <button
         onClick={handleGoogleLogin}
         className="bg-white text-black px-5 py-2 rounded-full font-medium hover:scale-105 transition"
       >
         Join Now
       </button>
+
     )}
 
   </div>
+
 </nav>
-<div className="px-8 py-6">
-  <button
-    onClick={runGemini}
-    className="bg-lime-400 text-black px-6 py-3 rounded-2xl font-bold hover:scale-105 transition"
-  >
-    Test Gemini AI
-  </button>
-</div>
 
       {/* Hero Section */}
       <section className="relative flex flex-col items-center justify-center text-center px-6 py-32 overflow-hidden">
@@ -222,7 +260,7 @@ export default function Home() {
   initial={{ opacity: 0, y: 40 }}
   animate={{ opacity: 1, y: 0 }}
   transition={{ duration: 0.8 }}
-  className="text-6xl md:text-8xl font-black leading-tight max-w-6xl relative z-10"
+  className="text-5xl md:text-8xlfont-black leading-tight max-w-6xl relative z-10"
 >
 
   Find Your
@@ -240,15 +278,37 @@ export default function Home() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.8 }}
-          className="flex gap-4 mt-10 relative z-10"
+          className="flex flex-col md:flex-row gap-4 mt-10 relative z-10"
         >
-          <button className="bg-lime-400 text-black px-7 py-3 rounded-full font-semibold hover:scale-105 transition">
-            Find Gym Partners
-          </button>
+          <button
+  onClick={() => {
 
-          <button className="border border-gray-700 px-7 py-3 rounded-full hover:bg-gray-900 transition">
-            Explore Community
-          </button>
+    const section = document.getElementById("partners");
+
+    section?.scrollIntoView({
+      behavior: "smooth",
+    });
+
+  }}
+  className="bg-lime-400 text-black px-7 py-3 rounded-full font-semibold hover:scale-105 transition"
+>
+  Find Gym Partners
+</button>
+
+          <button
+  onClick={() => {
+
+    const section = document.getElementById("community");
+
+    section?.scrollIntoView({
+      behavior: "smooth",
+    });
+
+  }}
+  className="border border-gray-700 px-7 py-3 rounded-full hover:bg-gray-900 transition"
+>
+  Explore Community
+</button>
         </motion.div>
         <div className="mt-20 flex justify-center relative z-10">
 
@@ -289,11 +349,14 @@ export default function Home() {
 
       </div>
 
-      <button className="w-full bg-lime-400 text-black py-4 rounded-2xl font-bold hover:scale-105 transition">
-
-        Match Now
-
-      </button>
+      <button
+  onClick={() =>
+    alert("Finding compatible partners nearby 🚀")
+  }
+  className="w-full bg-lime-400 text-black py-4 rounded-2xl font-bold hover:scale-105 transition"
+>
+  Match Now
+</button>
 
     </div>
 
@@ -539,6 +602,21 @@ export default function Home() {
             </div>
 
             <div className="space-y-3 text-gray-300">
+              <div className="flex items-center gap-3 mb-4">
+
+  <div className="bg-lime-400 text-black px-4 py-2 rounded-full font-bold text-sm">
+
+    🔥 12 Day Streak
+
+  </div>
+
+  <div className="bg-gray-800 px-4 py-2 rounded-full text-sm text-gray-300">
+
+    🏆 Consistent
+
+  </div>
+
+</div>
 
               <p>🏋️ Bulking Journey</p>
               <p>⏰ 6AM - 8AM</p>
@@ -611,7 +689,9 @@ export default function Home() {
       </section>
             {/* Community Posts */}
 
-      <section className="px-8 py-24 border-t border-gray-900">
+    <section
+  id="community"
+  className="px-8 py-24 border-t border-gray-900">
 
         <div className="mb-16 text-center">
 
@@ -764,7 +844,9 @@ onChange={(e) => setName(e.target.value)}
 </section>
 {/* Dynamic Community Section */}
 
-<section className="px-8 py-24 border-t border-gray-900">
+<section
+  id="partners"
+   className="px-8 py-24 border-t border-gray-900">
 
   <div className="text-center mb-16">
 
@@ -780,24 +862,99 @@ onChange={(e) => setName(e.target.value)}
 
   <div className="grid md:grid-cols-3 gap-8">
 
-    {users.map((userCard) => (
+   {users
+  .filter((userCard) => {
+
+    if (!goal) return true;
+
+    return userCard.goal === goal;
+
+  })
+  .map((userCard) => (
 
       <div
-        key={userCard.id}
-        className="bg-gray-900 border border-gray-800 rounded-3xl p-6"
-      >
+  key={userCard.id}
+  onClick={() => setViewProfile(userCard)}
+  className="bg-gray-900 border border-gray-800 rounded-3xl p-6 hover:border-lime-400 transition cursor-pointer"
+>
 
-        <h3 className="text-2xl font-bold mb-4">
-          {userCard.name}
-        </h3>
+  <div className="flex items-center gap-4 mb-6">
 
-        <div className="space-y-3 text-gray-300">
+    <div className="w-14 h-14 rounded-full bg-lime-400 flex items-center justify-center text-black font-bold text-xl">
+
+      {userCard.name?.charAt(0)}
+
+    </div>
+
+    <div>
+
+      <h3 className="text-2xl font-bold">
+        {userCard.name}
+      </h3>
+
+      <p className="text-lime-400 font-semibold">
+       🔥 92% Match
+      </p>
+
+    </div>
+
+  </div>
+
+  <div className="space-y-3 text-gray-300">
 
           <p>🎯 {userCard.goal}</p>
 
           <p>⏰ {userCard.timing}</p>
 
           <p>🔥 {userCard.level}</p>
+          <div className="bg-black border border-gray-800 rounded-2xl p-4 mt-4">
+
+  <p className="text-lime-400 font-semibold mb-2">
+    AI Insight 🤖
+  </p>
+
+  <p className="text-gray-400 text-sm leading-relaxed">
+
+    You both prefer
+    {" "}
+    <span className="text-white font-medium">
+      {userCard.goal}
+    </span>
+    {" "}
+    workouts and
+    {" "}
+    <span className="text-white font-medium">
+      {userCard.timing}
+    </span>
+    {" "}
+    training schedules.
+
+  </p>
+
+</div>
+          <button
+  onClick={() => {
+
+    setSelectedUser(userCard);
+
+    const alreadyExists = connections.find(
+      (conn) => conn.id === userCard.id
+    );
+
+    if (!alreadyExists) {
+
+      setConnections([
+        ...connections,
+        userCard
+      ]);
+
+    }
+
+  }}
+  className="w-full bg-lime-400 text-black py-3 rounded-2xl font-bold mt-6 hover:scale-105 transition"
+>
+  Connect 🔥
+</button>
 
         </div>
 
@@ -808,6 +965,423 @@ onChange={(e) => setName(e.target.value)}
   </div>
 
 </section>
+{selectedUser && (
+
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+
+   <div className="bg-[#111111]/95 backdrop-blur-xl w-[90%] max-w-md rounded-[32px] p-6 border border-gray-800 shadow-2xl">
+
+      <div className="flex items-center justify-between mb-6">
+
+        <h2 className="text-2xl font-bold">
+          Chat with {selectedUser.name}
+        </h2>
+
+        <button
+          onClick={() => setSelectedUser(null)}
+          className="text-gray-400"
+        >
+          ✕
+        </button>
+
+      </div>
+
+    <div className="space-y-4 h-64 overflow-y-auto mb-6 pr-2">
+
+        {messages.map((msg, index) => (
+
+          <div
+  key={index}
+  className="bg-lime-400 text-black rounded-[22px] px-5 py-3 w-fit max-w-[80%] ml-auto font-semibold shadow-lg"
+>
+  {msg}
+</div>
+
+        ))}
+
+      </div>
+
+      <div className="flex gap-3">
+
+        <input
+          type="text"
+          placeholder="Type message..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          className="flex-1 bg-black/70 border border-gray-700 rounded-2xl px-5 py-3 outline-none focus:border-lime-400 transition"
+        />
+
+        <button
+          onClick={() => {
+
+            if (!message) return;
+
+            setMessages([...messages, message]);
+
+            setMessage("");
+
+          }}
+          className="bg-lime-400 text-black px-6 rounded-2xl font-bold hover:scale-105 transition"
+        >
+          Send
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+)}
+{/* Nearby Gyms Section */}
+
+<section className="px-8 py-24 border-t border-gray-900">
+
+  <div className="text-center mb-16">
+
+    <h2 className="text-4xl md:text-5xl font-bold">
+      Nearby Gyms 🏋️
+    </h2>
+
+    <p className="text-gray-400 mt-4 text-lg">
+      Discover top-rated fitness centers around you.
+    </p>
+
+  </div>
+
+  <div className="grid md:grid-cols-3 gap-8">
+
+    {/* Gym 1 */}
+    <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 hover:border-lime-400 transition">
+
+      <div className="flex items-center justify-between mb-4">
+
+        <h3 className="text-2xl font-bold">
+          Gold’s Gym
+        </h3>
+
+        <span className="text-lime-400">
+          ⭐ 4.8
+        </span>
+
+      </div>
+
+      <div className="space-y-3 text-gray-300">
+
+        <p>📍 1.2km Away</p>
+
+        <p>🕒 Open: 5AM - 11PM</p>
+
+        <p>🏋️ Strength & Cardio</p>
+
+      </div>
+
+      <button className="w-full bg-lime-400 text-black py-3 rounded-2xl font-bold mt-6 hover:scale-105 transition">
+
+        View Gym
+
+      </button>
+
+    </div>
+
+    {/* Gym 2 */}
+    <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 hover:border-lime-400 transition">
+
+      <div className="flex items-center justify-between mb-4">
+
+        <h3 className="text-2xl font-bold">
+          Cult Fit
+        </h3>
+
+        <span className="text-lime-400">
+          ⭐ 4.6
+        </span>
+
+      </div>
+
+      <div className="space-y-3 text-gray-300">
+
+        <p>📍 2.4km Away</p>
+
+        <p>🕒 Open: 6AM - 10PM</p>
+
+        <p>🔥 HIIT & Functional</p>
+
+      </div>
+
+      <button className="w-full bg-lime-400 text-black py-3 rounded-2xl font-bold mt-6 hover:scale-105 transition">
+
+        View Gym
+
+      </button>
+
+    </div>
+
+    {/* Gym 3 */}
+    <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 hover:border-lime-400 transition">
+
+      <div className="flex items-center justify-between mb-4">
+
+        <h3 className="text-2xl font-bold">
+          Anytime Fitness
+        </h3>
+
+        <span className="text-lime-400">
+          ⭐ 4.9
+        </span>
+
+      </div>
+
+      <div className="space-y-3 text-gray-300">
+
+        <p>📍 3.1km Away</p>
+
+        <p>🕒 Open 24 Hours</p>
+
+        <p>💪 Premium Equipment</p>
+
+      </div>
+
+      <button className="w-full bg-lime-400 text-black py-3 rounded-2xl font-bold mt-6 hover:scale-105 transition">
+
+        View Gym
+
+      </button>
+
+    </div>
+
+  </div>
+
+</section>
+{/* Recent Connections */}
+
+<section
+  id="connections"
+  className="px-8 py-24 border-t border-gray-900">
+
+  <div className="mb-14">
+
+    <h2 className="text-4xl font-bold">
+      Recent Connections 🔥
+    </h2>
+
+    <p className="text-gray-400 mt-3">
+      People you've connected with recently.
+    </p>
+
+  </div>
+
+  <div className="grid md:grid-cols-3 gap-6">
+
+    {connections.map((conn) => (
+
+      <div
+        key={conn.id}
+        className="bg-gray-900 border border-gray-800 rounded-3xl p-6"
+      >
+
+        <div className="flex items-center gap-4 mb-4">
+
+          <div className="w-12 h-12 rounded-full bg-lime-400 flex items-center justify-center text-black font-bold">
+
+            {conn.name?.charAt(0)}
+
+          </div>
+
+          <div>
+
+            <h3 className="text-xl font-semibold">
+              {conn.name}
+            </h3>
+
+            <p className="text-gray-400 text-sm">
+              Active Chat
+            </p>
+
+          </div>
+
+        </div>
+
+        <button
+          onClick={() => setSelectedUser(conn)}
+          className="w-full bg-lime-400 text-black py-3 rounded-2xl font-bold mt-4"
+        >
+          Open Chat
+        </button>
+
+      </div>
+
+    ))}
+
+  </div>
+
+</section>
+{viewProfile && (
+
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+
+    <div className="bg-[#111111] border border-gray-800 rounded-[32px] p-8 w-[90%] max-w-lg">
+
+      <div className="flex justify-between items-center mb-8">
+
+        <h2 className="text-3xl font-bold">
+          Fitness Profile 🚀
+        </h2>
+
+        <button
+          onClick={() => setViewProfile(null)}
+          className="text-gray-400 text-xl"
+        >
+          ✕
+        </button>
+
+      </div>
+
+      <div className="flex items-center gap-5 mb-8">
+
+        <div className="w-20 h-20 rounded-full bg-lime-400 flex items-center justify-center text-black text-3xl font-bold">
+
+          {viewProfile.name?.charAt(0)}
+
+        </div>
+
+        <div>
+
+          <h3 className="text-3xl font-bold">
+            {viewProfile.name}
+          </h3>
+
+          <p className="text-lime-400 font-semibold mt-1">
+            {Math.floor(Math.random() * 20) + 80}% Compatible
+          </p>
+
+        </div>
+
+      </div>
+
+      <div className="space-y-5 text-gray-300">
+
+        <div className="bg-black border border-gray-800 rounded-2xl p-4">
+
+          <p className="text-gray-500 text-sm mb-1">
+            Fitness Goal
+          </p>
+
+          <p className="font-semibold text-lg">
+            {viewProfile.goal}
+          </p>
+
+        </div>
+
+        <div className="bg-black border border-gray-800 rounded-2xl p-4">
+
+          <p className="text-gray-500 text-sm mb-1">
+            Workout Timing
+          </p>
+
+          <p className="font-semibold text-lg">
+            {viewProfile.timing}
+          </p>
+
+        </div>
+
+        <div className="bg-black border border-gray-800 rounded-2xl p-4">
+
+          <p className="text-gray-500 text-sm mb-1">
+            Experience Level
+          </p>
+
+          <p className="font-semibold text-lg">
+            {viewProfile.level}
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+)}
+{showOverview && (
+
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+
+    <div className="bg-[#111111] border border-gray-800 rounded-[32px] p-8 w-[90%] max-w-md">
+
+      <div className="flex items-center justify-between mb-8">
+
+        <h2 className="text-3xl font-bold">
+          Spottr Overview 🚀
+        </h2>
+
+        <button
+          onClick={() => setShowOverview(false)}
+          className="text-gray-400 text-xl"
+        >
+          ✕
+        </button>
+
+      </div>
+
+      <div className="space-y-4">
+
+        <button
+          onClick={() => {
+            document.getElementById("partners")
+              ?.scrollIntoView({ behavior: "smooth" });
+
+            setShowOverview(false);
+          }}
+          className="w-full bg-gray-900 border border-gray-800 py-4 rounded-2xl hover:border-lime-400 transition"
+        >
+          🏋️ Gym Partners
+        </button>
+
+        <button
+          onClick={() => {
+            document.getElementById("community")
+              ?.scrollIntoView({ behavior: "smooth" });
+
+            setShowOverview(false);
+          }}
+          className="w-full bg-gray-900 border border-gray-800 py-4 rounded-2xl hover:border-lime-400 transition"
+        >
+          🌍 Community Feed
+        </button>
+
+        <button
+          onClick={() => {
+            document.getElementById("gyms")
+              ?.scrollIntoView({ behavior: "smooth" });
+
+            setShowOverview(false);
+          }}
+          className="w-full bg-gray-900 border border-gray-800 py-4 rounded-2xl hover:border-lime-400 transition"
+        >
+          🏋️ Nearby Gyms
+        </button>
+
+        <button
+          onClick={() => {
+            document.getElementById("connections")
+              ?.scrollIntoView({ behavior: "smooth" });
+
+            setShowOverview(false);
+          }}
+          className="w-full bg-gray-900 border border-gray-800 py-4 rounded-2xl hover:border-lime-400 transition"
+        >
+          🔥 Recent Connections
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+)}
 
     </main>
   );
