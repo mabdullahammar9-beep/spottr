@@ -36,6 +36,8 @@ const [connections, setConnections] = useState<any[]>([]);
   const [timing, setTiming] = useState("");
   const [level, setLevel] = useState("");
   const [search, setSearch] = useState("");
+  const [profileCompleted, setProfileCompleted] = useState(false);
+  const [aiResponse, setAiResponse] = useState("");
   
 
   const [users, setUsers] = useState<any[]>([]);
@@ -88,7 +90,8 @@ const [connections, setConnections] = useState<any[]>([]);
         createdAt: new Date(),
       });
 
-      alert("Profile Saved 🚀");
+      setAiResponse("Profile Saved Successfully 🚀");
+      setProfileCompleted(true);
 
       fetchUsers();
 
@@ -96,7 +99,7 @@ const [connections, setConnections] = useState<any[]>([]);
 
       console.error(error);
 
-      alert("Something went wrong");
+       setAiResponse("Something went wrong");
 
     }
   };
@@ -133,32 +136,13 @@ const [connections, setConnections] = useState<any[]>([]);
 
   const runGemini = async () => {
 
-    try {
+  setAiResponse(
 
-      const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
-      });
+    `${name || "You"} are highly compatible with users sharing similar fitness goals, workout timings, and consistency levels 🚀`
 
-      const result = await model.generateContent(
-        `Suggest a gym partner for:
-        Name: ${name}
-        Goal: ${goal}
-        Timing: ${timing}
-        Level: ${level}`
-      );
+  );
 
-      const response = result.response.text();
-
-      alert(response);
-
-    } catch (error) {
-
-      console.error(error);
-
-      alert("Gemini quota exceeded");
-
-    }
-  };
+};
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -285,20 +269,31 @@ const [connections, setConnections] = useState<any[]>([]);
   Find Gym Partners
 </button>
 
-          <button
-  onClick={() => {
+          <div className="flex flex-wrap items-center gap-4">
 
-    const section = document.getElementById("community");
+  <button
+    onClick={() => {
 
-    section?.scrollIntoView({
-      behavior: "smooth",
-    });
+      const section = document.getElementById("community");
 
-  }}
-  className="border border-gray-700 px-7 py-3 rounded-full hover:bg-gray-900 transition"
->
-  Explore Community
-</button>
+      section?.scrollIntoView({
+        behavior: "smooth",
+      });
+
+    }}
+    className="border border-gray-700 px-7 py-3 rounded-full hover:bg-gray-900 transition"
+  >
+    Explore Community
+  </button>
+
+  <button
+    onClick={runGemini}
+    className="bg-lime-400 text-black px-7 py-3 rounded-full font-semibold hover:scale-105 transition"
+  >
+    Get AI Fitness Insight 
+  </button>
+
+</div>
         </motion.div>
         <div className="mt-20 flex justify-center relative z-10">
 
@@ -341,7 +336,7 @@ const [connections, setConnections] = useState<any[]>([]);
 
       <button
   onClick={() =>
-    alert("Finding compatible partners nearby 🚀")
+    setAiResponse("Finding compatible partners nearby 🚀")
   }
   className="w-full bg-lime-400 text-black py-4 rounded-2xl font-bold hover:scale-105 transition"
 >
@@ -570,114 +565,107 @@ const [connections, setConnections] = useState<any[]>([]);
           </h2>
 
           <p className="text-gray-400 mt-4 text-lg">
-            Connect with compatible fitness partners around you.
+            Connect with compatible fitness partners around you!
           </p>
 
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
 
-          {/* Card 1 */}
-          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 hover:border-lime-400 transition">
+{users
+  .filter((userCard) => {
 
-            <div className="flex items-center gap-4 mb-6">
+    if (!search.trim()) return true;
 
-              <div className="w-14 h-14 rounded-full bg-lime-400"></div>
+    const searchText = search.toLowerCase();
 
-              <div>
-                <h3 className="text-xl font-semibold">
-                  Ahmed
-                </h3>
+    return (
 
-                <p className="text-gray-400 text-sm">
-                  92% Compatible
-                </p>
-              </div>
+      userCard.name?.toLowerCase().includes(searchText)
 
-            </div>
+      ||
 
-            <div className="space-y-3 text-gray-300">
-              <div className="flex items-center gap-3 mb-4">
+      userCard.goal?.toLowerCase().includes(searchText)
 
-  <div className="bg-lime-400 text-black px-4 py-2 rounded-full font-bold text-sm">
+      ||
 
-    🔥 12 Day Streak
+      userCard.timing?.toLowerCase().includes(searchText)
 
-  </div>
+    );
 
-  <div className="bg-gray-800 px-4 py-2 rounded-full text-sm text-gray-300">
+  })
 
-    🏆 Consistent
+  .map((userCard) => (
 
-  </div>
+    <div
+      key={userCard.id}
+      onClick={() => setViewProfile(userCard)}
+      className="bg-gray-900 border border-gray-800 rounded-3xl p-6 hover:border-lime-400 transition cursor-pointer"
+    >
 
-</div>
+      <div className="flex items-center gap-4 mb-6">
 
-              <p>🏋️ Bulking Journey</p>
-              <p>⏰ 6AM - 8AM</p>
-              <p>📍 2.1km Away</p>
+        <div className="w-14 h-14 rounded-full bg-lime-400 flex items-center justify-center text-black font-bold text-xl">
 
-            </div>
+          {userCard.name?.charAt(0)}
 
-          </div>
+        </div>
 
-          {/* Card 2 */}
-          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 hover:border-lime-400 transition">
+        <div>
 
-            <div className="flex items-center gap-4 mb-6">
+          <h3 className="text-2xl font-bold">
+            {userCard.name}
+          </h3>
 
-              <div className="w-14 h-14 rounded-full bg-blue-400"></div>
+          <p className="text-lime-400 font-semibold">
+            🔥 92% Match
+          </p>
 
-              <div>
-                <h3 className="text-xl font-semibold">
-                  Sarah
-                </h3>
+        </div>
 
-                <p className="text-gray-400 text-sm">
-                  88% Compatible
-                </p>
-              </div>
+      </div>
 
-            </div>
+      <div className="space-y-3 text-gray-300">
 
-            <div className="space-y-3 text-gray-300">
+        <p>🎯 {userCard.goal}</p>
 
-              <p>🔥 Fat Loss Goal</p>
-              <p>⏰ Evening Workouts</p>
-              <p>📍 1.4km Away</p>
+        <p>⏰ {userCard.timing}</p>
 
-            </div>
+        <p>💪 {userCard.level}</p>
 
-          </div>
+      </div>
 
-          {/* Card 3 */}
-          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 hover:border-lime-400 transition">
+      <button
+        onClick={(e) => {
 
-            <div className="flex items-center gap-4 mb-6">
+          e.stopPropagation();
 
-              <div className="w-14 h-14 rounded-full bg-pink-400"></div>
+          setViewProfile(null);
 
-              <div>
-                <h3 className="text-xl font-semibold">
-                  Zayn
-                </h3>
+          setSelectedUser(userCard);
 
-                <p className="text-gray-400 text-sm">
-                  95% Compatible
-                </p>
-              </div>
+          const alreadyExists = connections.find(
+            (conn) => conn.id === userCard.id
+          );
 
-            </div>
+          if (!alreadyExists) {
 
-            <div className="space-y-3 text-gray-300">
+            setConnections([
+              ...connections,
+              userCard
+            ]);
 
-              <p>💪 Strength Training</p>
-              <p>⏰ Late Night Gym</p>
-              <p>📍 3.7km Away</p>
+          }
 
-            </div>
+        }}
+        className="w-full bg-lime-400 text-black py-3 rounded-2xl font-bold mt-6 hover:scale-105 transition"
+      >
+        Connect 🔥
+      </button>
 
-          </div>
+    </div>
+
+  ))}
 
         </div>
 
@@ -761,6 +749,7 @@ const [connections, setConnections] = useState<any[]>([]);
       </section>
 
       {/* Onboarding Section */}
+     {!profileCompleted && (
 
 <section className="px-8 py-24 border-t border-gray-900">
 
@@ -825,18 +814,14 @@ onChange={(e) => setName(e.target.value)}
 >
   Save Profile
 </button>
-<button
-  onClick={runGemini}
-  className="w-full bg-lime-400 text-black py-3 rounded-xl font-semibold mt-4"
->
-  Test Gemini AI 🚀
-</button>
+
 
     </div>
 
   </div>
 
 </section>
+)}
 {/* Dynamic Community Section */}
 
 <section
@@ -846,7 +831,7 @@ onChange={(e) => setName(e.target.value)}
   <div className="text-center mb-16">
 
     <h2 className="text-4xl md:text-5xl font-bold">
-      Real Spottr Users 🚀
+      🔥 Recently Joined 
     </h2>
 
     <p className="text-gray-400 mt-4 text-lg">
@@ -860,34 +845,27 @@ onChange={(e) => setName(e.target.value)}
    {users
   .filter((userCard) => {
 
-    if (!search) return true;
+  if (!search.trim()) return true;
 
-    const searchText = search.toLowerCase();
-    console.log(searchText);
+  const searchText = search.toLowerCase();
 
-    return (
+  return (
 
-      userCard.name
-        ?.toLowerCase()
-        .includes(searchText)
+    userCard.name?.toLowerCase().includes(searchText)
 
-      ||
+    ||
 
-      userCard.goal
-        ?.toLowerCase()
-        .includes(searchText)
+    userCard.goal?.toLowerCase().includes(searchText)
 
-      ||
+    ||
 
-      userCard.timing
-        ?.toLowerCase()
-        .includes(searchText)
+    userCard.timing?.toLowerCase().includes(searchText)
 
-    );
+  );
 
-  })
+})
 
-  .map((userCard) => (
+.map((userCard) => (
       <div
   key={userCard.id}
   onClick={() => setViewProfile(userCard)}
@@ -949,24 +927,28 @@ onChange={(e) => setName(e.target.value)}
 
 </div>
           <button
-  onClick={() => {
+  onClick={(e) => {
 
-    setSelectedUser(userCard);
+  e.stopPropagation();
 
-    const alreadyExists = connections.find(
-      (conn) => conn.id === userCard.id
-    );
+  setViewProfile(null);
 
-    if (!alreadyExists) {
+  setSelectedUser(userCard);
 
-      setConnections([
-        ...connections,
-        userCard
-      ]);
+  const alreadyExists = connections.find(
+    (conn) => conn.id === userCard.id
+  );
 
-    }
+  if (!alreadyExists) {
 
-  }}
+    setConnections([
+      ...connections,
+      userCard
+    ]);
+
+  }
+
+}}
   className="w-full bg-lime-400 text-black py-3 rounded-2xl font-bold mt-6 hover:scale-105 transition"
 >
   Connect 🔥
@@ -1024,6 +1006,21 @@ onChange={(e) => setName(e.target.value)}
           placeholder="Type message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
+
+          onKeyDown={(e) => {
+
+  if (e.key === "Enter") {
+
+    if (!message) return;
+
+    setMessages([...messages, message]);
+
+    setMessage("");
+
+  }
+
+}}
+          
           className="flex-1 bg-black/70 border border-gray-700 rounded-2xl px-5 py-3 outline-none focus:border-lime-400 transition"
         />
 
@@ -1399,6 +1396,32 @@ onChange={(e) => setName(e.target.value)}
 
 )}
 
+{aiResponse && (
+
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-6">
+
+    <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 max-w-md w-full text-center">
+
+      <h2 className="text-2xl font-bold mb-4">
+         Spottr
+      </h2>
+
+      <p className="text-gray-300 leading-relaxed">
+        {aiResponse}
+      </p>
+
+      <button
+        onClick={() => setAiResponse("")}
+        className="mt-6 bg-lime-400 text-black px-6 py-3 rounded-2xl font-semibold hover:scale-105 transition"
+      >
+        Close
+      </button>
+
+    </div>
+
+  </div>
+
+)}
     </main>
   );
 }
