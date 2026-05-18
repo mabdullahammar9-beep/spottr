@@ -14,6 +14,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
+// Configurable model names via env
+const GEMINI_MODEL = process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-2.5-flash";
+const GEMINI_FALLBACK_MODEL = process.env.NEXT_PUBLIC_GEMINI_FALLBACK || "";
 
 export default function Home() {
 
@@ -34,13 +37,33 @@ const [connections, setConnections] = useState<any[]>([]);
   const [name, setName] = useState("");
   const [goal, setGoal] = useState("");
   const [timing, setTiming] = useState("");
+  const [workoutStyle, setWorkoutStyle] = useState("");
   const [level, setLevel] = useState("");
   const [search, setSearch] = useState("");
   const [profileCompleted, setProfileCompleted] = useState(false);
   const [aiResponse, setAiResponse] = useState("");
   
+  
 
   const [users, setUsers] = useState<any[]>([]);
+  const calculateCompatibility = (user: any) => {
+
+  let score = 60 + Math.floor(Math.random() * 20);
+
+  if (user.goal === goal) score += 10;
+
+  if (user.timing === timing) score += 10;
+
+  if (user.level === level) score += 5;
+
+  if (user.workoutStyle === workoutStyle) score += 5;
+
+  return Math.min(score, 98);
+
+};
+const generateStreak = () => {
+  return Math.floor(Math.random() * 15) + 5
+};
 
   useEffect(() => {
 
@@ -52,6 +75,7 @@ const [connections, setConnections] = useState<any[]>([]);
       setUser(currentUser);
     }
   );
+  
   
 
   return () => unsubscribe();
@@ -134,15 +158,75 @@ const [connections, setConnections] = useState<any[]>([]);
     }
   };
 
+  // Helper: generate with retries and exponential backoff
+  const generateWithRetries = async (
+    modelName: string,
+    prompt: string,
+    attempts = 3
+  ): Promise<string> => {
+    let lastErr: any = null;
+
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        console.log(name, goal, timing, level);
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+      } catch (err: any) {
+        lastErr = err;
+        const backoffMs = 500 * Math.pow(2, attempt);
+        if (attempt < attempts - 1) {
+          await new Promise((res) => setTimeout(res, backoffMs));
+        }
+      }
+    }
+
+    throw lastErr;
+  };
+
   const runGemini = async () => {
+    setAiResponse("Finding an insight... 🚀");
 
-  setAiResponse(
+    const prompt = `
+You are an AI fitness accountability coach inside the Spottr app.
 
-    `${name || "You"} are highly compatible with users sharing similar fitness goals, workout timings, and consistency levels 🚀`
+Generate a short, modern, motivating fitness insight for this user.
 
-  );
+Name: ${name}
+Goal: ${goal}
+Timing: ${timing}
+Level: ${level}
 
-};
+Rules:
+- Do NOT repeat labels like Name, Goal, Timing, or Level.
+- Speak directly to the user naturally.
+- Keep it under 2 lines.
+- Make it feel modern and motivating.
+`;
+    try {
+      const response = await generateWithRetries(GEMINI_MODEL, prompt, 3);
+      setAiResponse(response);
+      return;
+    } catch (primaryErr) {
+      console.error("Primary model failed:", primaryErr);
+
+      if (GEMINI_FALLBACK_MODEL) {
+        try {
+          const fallbackResp = await generateWithRetries(
+            GEMINI_FALLBACK_MODEL,
+            prompt,
+            2
+          );
+          setAiResponse(fallbackResp);
+          return;
+        } catch (fallbackErr) {
+          console.error("Fallback model failed:", fallbackErr);
+        }
+      }
+
+      setAiResponse("AI insights are temporarily busy 🙃");
+    }
+  };
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -216,7 +300,13 @@ const [connections, setConnections] = useState<any[]>([]);
 </nav>
 
       {/* Hero Section */}
-      <section className="relative flex flex-col items-center justify-center text-center px-6 py-32 overflow-hidden">
+      {/* Hero Section */}
+
+<section className="relative overflow-hidden flex flex-col items-center justify-center text-center px-6 py-32">
+
+  <div className="absolute top-20 left-10 w-72 h-72 bg-lime-400/10 blur-3xl rounded-full"></div>
+
+  <div className="absolute bottom-10 right-10 w-72 h-72 bg-green-500/10 blur-3xl rounded-full"></div>
 
         {/* Glow */}
         <div className="absolute w-[500px] h-[500px] bg-lime-500/20 blur-3xl rounded-full top-[-100px]"></div>
@@ -373,7 +463,7 @@ const [connections, setConnections] = useState<any[]>([]);
         <div className="grid md:grid-cols-3 gap-8">
 
           {/* Card 1 */}
-          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 transition">
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(163,230,53,0.15)] duration-200 transition-all">
 
             <div className="text-4xl mb-4">
               🏋️
@@ -391,7 +481,7 @@ const [connections, setConnections] = useState<any[]>([]);
           </div>
 
           {/* Card 2 */}
-          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 transition">
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(163,230,53,0.15)] duration-200 transition-all">
 
             <div className="text-4xl mb-4">
               🔥
@@ -409,7 +499,7 @@ const [connections, setConnections] = useState<any[]>([]);
           </div>
 
           {/* Card 3 */}
-          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 transition">
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(163,230,53,0.15)] duration-200 transition-all">
 
             <div className="text-4xl mb-4">
               🌍
@@ -430,7 +520,13 @@ const [connections, setConnections] = useState<any[]>([]);
 
       </motion.section>
             {/* App Preview Section */}
-      <section className="px-8 py-24">
+      <motion.section
+  initial={{ opacity: 0, y: 40 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.6 }}
+  viewport={{ once: true }}
+  className="px-8 py-24"
+>
 
         <div className="text-center mb-14">
 
@@ -458,7 +554,7 @@ const [connections, setConnections] = useState<any[]>([]);
                 </h3>
 
                 <p className="text-5xl font-bold text-lime-400 mt-4">
-                  12 Days
+                  🔥 {generateStreak()} Day Streak
                 </p>
 
               </div>
@@ -530,7 +626,7 @@ const [connections, setConnections] = useState<any[]>([]);
 
         </div>
 
-      </section>
+      </motion.section>
             {/* Search Section */}
 
       <section className="px-8 py-12">
@@ -556,7 +652,13 @@ const [connections, setConnections] = useState<any[]>([]);
 
       </section>
             {/* Gym Partner Section */}
-      <section className="px-8 py-24">
+      <motion.section
+  initial={{ opacity: 0, y: 40 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.6 }}
+  viewport={{ once: true }}
+  className="px-8 py-24"
+>
 
         <div className="text-center mb-16">
 
@@ -618,7 +720,7 @@ const [connections, setConnections] = useState<any[]>([]);
           </h3>
 
           <p className="text-lime-400 font-semibold">
-            🔥 92% Match
+            {calculateCompatibility(user)}% Compatible
           </p>
 
         </div>
@@ -669,7 +771,7 @@ const [connections, setConnections] = useState<any[]>([]);
 
         </div>
 
-      </section>
+      </motion.section>
             {/* Community Posts */}
 
     <section
@@ -807,10 +909,50 @@ onChange={(e) => setName(e.target.value)}
         <option>Intermediate</option>
         <option>Advanced</option>
       </select>
+      <select
+  value={workoutStyle}
+  onChange={(e) => setWorkoutStyle(e.target.value)}
+  className="w-full bg-black border border-gray-800 rounded-2xl px-5 py-4 outline-none focus:border-lime-400 transition"
+>
+  <option value="">Select Workout Style</option>
+
+  <option value="Strength Training">
+    Strength Training
+  </option>
+
+  <option value="CrossFit">
+    CrossFit
+  </option>
+
+  <option value="HIIT">
+    HIIT
+  </option>
+
+  <option value="Yoga">
+    Yoga
+  </option>
+
+  <option value="Pilates">
+    Pilates
+  </option>
+
+  <option value="Zumba">
+    Zumba
+  </option>
+
+  <option value="Calisthenics">
+    Calisthenics
+  </option>
+
+  <option value="Senior Wellness">
+    Senior Wellness
+  </option>
+
+</select>
 
       <button
   onClick={saveProfile}
-  className="..."
+  className="w-full bg-lime-400 text-black py-3 rounded-2xl font-bold mt-6 hover:scale-105 transition"
 >
   Save Profile
 </button>
@@ -829,8 +971,7 @@ onChange={(e) => setName(e.target.value)}
    className="px-8 py-24 border-t border-gray-900">
 
   <div className="text-center mb-16">
-
-    <h2 className="text-4xl md:text-5xl font-bold">
+<h2 className="text-3xl md:text-4xl font-bold">
       🔥 Recently Joined 
     </h2>
 
@@ -840,7 +981,7 @@ onChange={(e) => setName(e.target.value)}
 
   </div>
 
-  <div className="grid md:grid-cols-3 gap-8">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
    {users
   .filter((userCard) => {
@@ -869,7 +1010,7 @@ onChange={(e) => setName(e.target.value)}
       <div
   key={userCard.id}
   onClick={() => setViewProfile(userCard)}
-  className="bg-gray-900 border border-gray-800 rounded-3xl p-6 hover:border-lime-400 transition cursor-pointer"
+  className="bg-gray-900 border border-gray-800 rounded-2xl p-4 hover:border-lime-400 transition cursor-pointer"
 >
 
   <div className="flex items-center gap-4 mb-6">
@@ -882,12 +1023,12 @@ onChange={(e) => setName(e.target.value)}
 
     <div>
 
-      <h3 className="text-2xl font-bold">
+      <h3 className="text-lg font-semibold">
         {userCard.name}
       </h3>
 
       <p className="text-lime-400 font-semibold">
-       🔥 92% Match
+       🔥 88% Match
       </p>
 
     </div>
@@ -959,6 +1100,349 @@ onChange={(e) => setName(e.target.value)}
       </div>
 
     ))}
+
+  </div>
+
+</section>
+<section
+  id="communities"
+  className="px-8 py-24"
+>
+
+  <div className="max-w-7xl mx-auto">
+
+    <div className="text-center mb-16">
+
+      <h2 className="text-5xl font-bold mb-4">
+        Explore Fitness Communities
+      </h2>
+
+      <p className="text-gray-400 text-lg">
+        Find people who share your workout style and energy.
+      </p>
+
+    </div>
+
+    <div className="grid md:grid-cols-3 gap-8">
+
+      <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 hover:-translate-y-1 duration-200 transition">
+
+        <div className="text-5xl mb-6">🧘</div>
+
+        <h3 className="text-2xl font-bold mb-3">
+          Pilates
+        </h3>
+
+        <p className="text-gray-400 leading-relaxed">
+          Improve flexibility, posture, and core strength with mindful movement.
+        </p>
+        <div className="flex items-center gap-4 mt-6 text-sm text-gray-400">
+
+  <p>
+    👥 2.1K Members
+  </p>
+
+  <p>
+    🔥 183 Active Today
+  </p>
+
+</div>
+
+      </div>
+
+      <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 hover:-translate-y-1 duration-200 transition">
+
+        <div className="text-5xl mb-6">💃</div>
+
+        <h3 className="text-2xl font-bold mb-3">
+          Zumba
+        </h3>
+
+        <p className="text-gray-400 leading-relaxed">
+          High-energy dance workouts designed to keep fitness fun and social.
+        </p>
+
+      </div>
+
+      <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 hover:-translate-y-1 duration-200 transition">
+
+        <div className="text-5xl mb-6">🏋️</div>
+
+        <h3 className="text-2xl font-bold mb-3">
+          CrossFit
+        </h3>
+
+        <p className="text-gray-400 leading-relaxed">
+          Push your limits with high-intensity strength and endurance training.
+        </p>
+        <div className="flex items-center gap-4 mt-6 text-sm text-gray-400">
+
+  <p>
+    👥 1.8K Members
+  </p>
+
+  <p>
+    🔥 142 Active Today
+  </p>
+
+</div>
+
+      </div>
+
+      <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 hover:-translate-y-1 duration-200 transition">
+
+        <div className="text-5xl mb-6">🤸</div>
+
+        <h3 className="text-2xl font-bold mb-3">
+          Calisthenics
+        </h3>
+
+        <p className="text-gray-400 leading-relaxed">
+          Master bodyweight strength, balance, and mobility naturally.
+        </p>
+        <div className="flex items-center gap-4 mt-6 text-sm text-gray-400">
+
+  <p>
+    👥 2.1K Members
+  </p>
+
+  <p>
+    🔥 183 Active Today
+  </p>
+
+</div>
+
+      </div>
+
+      <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 hover:-translate-y-1 duration-200 transition">
+
+        <div className="text-5xl mb-6">🧘‍♂️</div>
+
+        <h3 className="text-2xl font-bold mb-3">
+          Yoga
+        </h3>
+
+        <p className="text-gray-400 leading-relaxed">
+          Build mindfulness, recovery, and flexibility through guided sessions.
+        </p>
+        <div className="flex items-center gap-4 mt-6 text-sm text-gray-400">
+
+  <p>
+    👥 3.4K Members
+  </p>
+
+  <p>
+    🔥 321 Active Today
+  </p>
+
+</div>
+
+      </div>
+
+      <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 hover:-translate-y-1 duration-200 transition">
+
+        <div className="text-5xl mb-6">🔥</div>
+
+        <h3 className="text-2xl font-bold mb-3">
+          HIIT
+        </h3>
+
+        <p className="text-gray-400 leading-relaxed">
+          Burn calories efficiently with intense interval-based workouts.
+        </p>
+        <div className="flex items-center gap-4 mt-6 text-sm text-gray-400">
+
+  <p>
+    👥 3.4K Members
+  </p>
+
+  <p>
+    🔥 321 Active Today
+  </p>
+
+</div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+<section className="px-8 py-24 border-t border-gray-900">
+
+  <div className="max-w-7xl mx-auto">
+
+    <div className="text-center mb-16">
+
+      <h2 className="text-5xl font-bold mb-4">
+        👴 Senior Wellness Programs 🇮🇳
+      </h2>
+
+      <p className="text-gray-400 text-lg max-w-3xl mx-auto leading-relaxed">
+        Encouraging healthier aging through guided movement, mobility, recovery,
+        and supportive fitness communities designed for older adults.
+      </p>
+      <div className="flex items-center gap-4 mt-6 text-sm text-gray-400">
+
+  <p>
+    👥 890 Members
+  </p>
+
+  <p>
+    🔥 74 Active Today
+  </p>
+
+</div>
+
+    </div>
+
+    <div className="grid md:grid-cols-2 gap-8">
+
+      <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(163,230,53,0.15)] duration-200 transition-all">
+
+        <div className="text-5xl mb-6">
+          🚶
+        </div>
+
+        <h3 className="text-2xl font-bold mb-4">
+          Morning Walking Circles
+        </h3>
+
+        <p className="text-gray-400 leading-relaxed">
+          Community-based walking groups helping seniors stay active, social,
+          and consistent with daily movement.
+        </p>
+
+      </div>
+
+      <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(163,230,53,0.15)] duration-200 transition-all">
+
+        <div className="text-5xl mb-6">
+          🧘
+        </div>
+
+        <h3 className="text-2xl font-bold mb-4">
+          Joint Mobility Yoga
+        </h3>
+
+        <p className="text-gray-400 leading-relaxed">
+          Gentle flexibility and balance-focused exercises designed to improve
+          mobility, posture, and recovery.
+        </p>
+
+      </div>
+
+      <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(163,230,53,0.15)] duration-200 transition-all">
+
+        <div className="text-5xl mb-6">
+          ❤️
+        </div>
+
+        <h3 className="text-2xl font-bold mb-4">
+          Heart Health Sessions
+        </h3>
+
+        <p className="text-gray-400 leading-relaxed">
+          Low-impact cardio routines promoting cardiovascular wellness and
+          healthier aging.
+        </p>
+
+      </div>
+
+      <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(163,230,53,0.15)] duration-200 transition-all">
+
+        <div className="text-5xl mb-6">
+          🤝
+        </div>
+
+        <h3 className="text-2xl font-bold mb-4">
+          Senior Accountability Groups
+        </h3>
+
+        <p className="text-gray-400 leading-relaxed">
+          Building supportive communities that motivate seniors to remain active,
+          healthy, and socially connected.
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+<section className="px-8 py-24 border-t border-gray-900">
+
+  <div className="max-w-7xl mx-auto">
+
+    <div className="text-center mb-16">
+
+      <h2 className="text-5xl font-bold mb-4">
+        🥗 Premium Nutrition Plans
+      </h2>
+
+      <p className="text-gray-400 text-lg max-w-3xl mx-auto leading-relaxed">
+        Personalized wellness and nutrition guidance designed by certified
+        dieticians and nutrition experts.
+      </p>
+
+    </div>
+
+    <div className="grid md:grid-cols-3 gap-8">
+
+      <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(163,230,53,0.15)] duration-200 transition-all">
+
+        <div className="text-5xl mb-6">
+          💪
+        </div>
+
+        <h3 className="text-2xl font-bold mb-4">
+          Muscle Gain Plans
+        </h3>
+
+        <p className="text-gray-400 leading-relaxed">
+          High-protein meal guidance and recovery-focused nutrition for strength
+          and muscle-building goals.
+        </p>
+
+      </div>
+
+      <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(163,230,53,0.15)] duration-200 transition-all">
+
+        <div className="text-5xl mb-6">
+          🥦
+        </div>
+
+        <h3 className="text-2xl font-bold mb-4">
+          Weight Loss Nutrition
+        </h3>
+
+        <p className="text-gray-400 leading-relaxed">
+          Sustainable calorie-conscious meal structures designed for healthy and
+          consistent fat loss.
+        </p>
+
+      </div>
+
+      <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-lime-400 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(163,230,53,0.15)] duration-200 transition-all">
+
+        <div className="text-5xl mb-6">
+          ❤️
+        </div>
+
+        <h3 className="text-2xl font-bold mb-4">
+          Senior Wellness Diets
+        </h3>
+
+        <p className="text-gray-400 leading-relaxed">
+          Balanced nutrition plans supporting heart health, bone strength,
+          mobility, and healthy aging.
+        </p>
+
+      </div>
+
+    </div>
 
   </div>
 
@@ -1319,9 +1803,9 @@ onChange={(e) => setName(e.target.value)}
 )}
 {showOverview && (
 
-  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+<div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 px-6 animate-fadeIn">
 
-    <div className="bg-[#111111] border border-gray-800 rounded-[32px] p-8 w-[90%] max-w-md">
+    <div className="bg-[#111111] border border-gray-800 rounded-[32px] p-8 w-full max-w-md">
 
       <div className="flex items-center justify-between mb-8">
 
@@ -1331,7 +1815,7 @@ onChange={(e) => setName(e.target.value)}
 
         <button
           onClick={() => setShowOverview(false)}
-          className="text-gray-400 text-xl"
+          className="text-gray-400 text-xl hover:text-white transition"
         >
           ✕
         </button>
@@ -1342,48 +1826,80 @@ onChange={(e) => setName(e.target.value)}
 
         <button
           onClick={() => {
+
             document.getElementById("partners")
-              ?.scrollIntoView({ behavior: "smooth" });
+              ?.scrollIntoView({
+                behavior: "smooth",
+              });
 
             setShowOverview(false);
+
           }}
-          className="w-full bg-gray-900 border border-gray-800 py-4 rounded-2xl hover:border-lime-400 transition"
+          className="w-full bg-gray-900 border border-gray-800 py-4 rounded-2xl hover:border-lime-400 hover:-translate-y-1 duration-200 transition"
         >
           🏋️ Gym Partners
         </button>
 
         <button
           onClick={() => {
+
             document.getElementById("community")
-              ?.scrollIntoView({ behavior: "smooth" });
+              ?.scrollIntoView({
+                behavior: "smooth",
+              });
 
             setShowOverview(false);
+
           }}
-          className="w-full bg-gray-900 border border-gray-800 py-4 rounded-2xl hover:border-lime-400 transition"
+          className="w-full bg-gray-900 border border-gray-800 py-4 rounded-2xl hover:border-lime-400 hover:-translate-y-1 duration-200 transition"
         >
           🌍 Community Feed
         </button>
 
         <button
           onClick={() => {
-            document.getElementById("gyms")
-              ?.scrollIntoView({ behavior: "smooth" });
+
+            document.getElementById("communities")
+              ?.scrollIntoView({
+                behavior: "smooth",
+              });
 
             setShowOverview(false);
+
           }}
-          className="w-full bg-gray-900 border border-gray-800 py-4 rounded-2xl hover:border-lime-400 transition"
+          className="w-full bg-gray-900 border border-gray-800 py-4 rounded-2xl hover:border-lime-400 hover:-translate-y-1 duration-200 transition"
+        >
+          ✨ Explore Communities
+        </button>
+
+        <button
+          onClick={() => {
+
+            document.getElementById("gyms")
+              ?.scrollIntoView({
+                behavior: "smooth",
+              });
+
+            setShowOverview(false);
+
+          }}
+          className="w-full bg-gray-900 border border-gray-800 py-4 rounded-2xl hover:border-lime-400 hover:-translate-y-1 duration-200 transition"
         >
           🏋️ Nearby Gyms
         </button>
 
         <button
           onClick={() => {
+
             document.getElementById("connections")
-              ?.scrollIntoView({ behavior: "smooth" });
+              ?.scrollIntoView({
+                behavior: "smooth",
+              });
 
             setShowOverview(false);
+
           }}
-          className="w-full bg-gray-900 border border-gray-800 py-4 rounded-2xl hover:border-lime-400 transition"
+          className="w-full bg-gray-900 border border-gray-800 py-4 rounded-2xl hover:border-lime-400 hover:-translate-y-1 duration-200 transition"
         >
           🔥 Recent Connections
         </button>
@@ -1398,7 +1914,7 @@ onChange={(e) => setName(e.target.value)}
 
 {aiResponse && (
 
-  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-6">
+ <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 px-6 animate-fadeIn">
 
     <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 max-w-md w-full text-center">
 
